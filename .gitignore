@@ -1,15 +1,104 @@
-# Godot 4+ specific ignores
-.godot/
+using UnityEngine;
+using UnityEngine.AI;
+using Photon.Pun;
 
-# Godot-specific ignores
-.import/
-export.cfg
-export_credentials.cfg
+public class GameController : MonoBehaviourPunCallbacks
+{
+    public CharacterController controller;
+    public float speed = 6f;
+    public float jumpHeight = 3f;
+    public float gravity = -9.81f;
+    public Transform groundCheck;
+    public LayerMask groundMask;
+    
+    private Vector3 velocity;
+    private bool isGrounded;
+    
+    void Update()
+    {
+        isGrounded = Physics.CheckSphere(groundCheck.position, 0.4f, groundMask);
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
+        
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * speed * Time.deltaTime);
+        
+        if (Input.GetButtonDown("Jump") && isGrounded)
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+    }
+}
 
-# Imported translations (automatically generated from CSV files)
-*.translation
+public class EnemyAI : MonoBehaviour
+{
+    public Transform player;
+    private NavMeshAgent agent;
+    public GameObject weapon;
+    
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+    }
+    
+    void Update()
+    {
+        agent.SetDestination(player.position);
+        if (Vector3.Distance(transform.position, player.position) < 10f)
+        {
+            Attack();
+        }
+    }
+    
+    void Attack()
+    {
+        Instantiate(weapon, transform.position, Quaternion.identity);
+    }
+}
 
-# Mono-specific ignores
-.mono/
-data_*/
-mono_crash.*.json
+public class DivinePower : MonoBehaviour
+{
+    public GameObject sudarshanChakra;
+    public Transform firePoint;
+    
+    void Update()
+    {
+        if (Input.GetButtonDown("Fire1"))
+        {
+            GameObject chakra = Instantiate(sudarshanChakra, firePoint.position, firePoint.rotation);
+            chakra.GetComponent<Rigidbody>().AddForce(firePoint.forward * 500);
+        }
+    }
+}
+
+public class VehicleController : MonoBehaviour
+{
+    public float speed = 50f;
+    public float turnSpeed = 20f;
+    void Update()
+    {
+        float move = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        float turn = Input.GetAxis("Horizontal") * turnSpeed * Time.deltaTime;
+        transform.Translate(Vector3.forward * move);
+        transform.Rotate(Vector3.up * turn);
+    }
+}
+
+public class AudioManager : MonoBehaviour
+{
+    public AudioSource backgroundMusic;
+    public AudioSource conchSound;
+    
+    void Start()
+    {
+        backgroundMusic.Play();
+    }
+    
+    public void PlayConch()
+    {
+        conchSound.Play();
+    }
+}
